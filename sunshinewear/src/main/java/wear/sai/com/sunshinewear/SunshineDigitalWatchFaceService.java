@@ -40,10 +40,12 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataItemBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
@@ -60,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+    private static final String LOG_TAG = "Wearable-WearableDataSync";
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -120,11 +123,7 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         float mXOffset;
         float mYOffset;
         //Connect to Wearable Api
-        GoogleApiClient mClient = new GoogleApiClient.Builder(SunshineDigitalWatchFaceService.this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Wearable.API)
-                .build();
+        GoogleApiClient mClient;
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -134,7 +133,14 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
-
+            if (mClient == null) {
+                mClient = new GoogleApiClient.Builder(SunshineDigitalWatchFaceService.this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(Wearable.API)
+                        .build();
+                Log.d(LOG_TAG, "googleclient created");
+            }
             setWatchFaceStyle(new WatchFaceStyle.Builder(SunshineDigitalWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
@@ -271,6 +277,7 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             // Draw the background.
+
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
             } else {
@@ -326,18 +333,31 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onConnected(@Nullable Bundle bundle) {
-
+            if (bundle != null) {
+                Log.d("Mobile-WearableDataSync", "wearable side onConnected" + bundle.toString());
+            } else {
+                Log.d("Mobile-WearableDataSync", "wearable side onConnected Bundle is null");
+            }
+            Wearable.DataApi.getDataItems(mClient).setResultCallback(onConnectedResultCallBack);
         }
 
         @Override
         public void onConnectionSuspended(int i) {
-
+            Log.d("Mobile-WearableDataSync", "wearable side suspended : " + i);
         }
 
         @Override
         public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            Log.d("Mobile-WearableDataSync", "wearable side onConnectionFailed : " + connectionResult);
 
         }
+
+        private final ResultCallback<DataItemBuffer> onConnectedResultCallBack = new ResultCallback<DataItemBuffer>() {
+            @Override
+            public void onResult(@NonNull DataItemBuffer dataItems) {
+                Log.i(LOG_TAG, "Result Callback : " + String.valueOf(dataItems));
+            }
+        };
 
         @Override
         public void onDataChanged(DataEventBuffer dataEvents) {
@@ -352,6 +372,8 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                         double mLow = dataMap.getDouble(WEATHER_MIN_TEMP);
                         // createIcons(dataMap.getString(ICON));
                         invalidate();
+                        Log.d(LOG_TAG, String.valueOf(mHigh));
+                        Log.d(LOG_TAG, String.valueOf(mLow));
                     }
                 }
             }

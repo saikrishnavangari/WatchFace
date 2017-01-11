@@ -76,7 +76,9 @@ public class SunshineSyncTask {
                 sunshineContentResolver.bulkInsert(
                         WeatherContract.WeatherEntry.CONTENT_URI,
                         weatherValues);
-                SendWeatherDataToPhone sendWeatherDataToPhone=new SendWeatherDataToPhone(weatherValues,context);
+                SendWeatherDataToPhone sendWeatherDataToPhone=SendWeatherDataToPhone.getInstance();
+                        sendWeatherDataToPhone.initialize(weatherValues,context);
+                sendWeatherDataToPhone.sendWeatherData();
                 /*
                  * Finally, after we insert data into the ContentProvider, determine whether or not
                  * we should notify the user that the weather has been refreshed.

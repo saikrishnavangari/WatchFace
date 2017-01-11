@@ -18,6 +18,7 @@ package com.example.android.sunshine.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.example.android.sunshine.R;
 
@@ -78,7 +79,7 @@ public final class SunshinePreferences {
 
         String keyForLocation = context.getString(R.string.pref_location_key);
         String defaultLocation = context.getString(R.string.pref_location_default);
-
+        Log.d("location changed to",sp.getString(keyForLocation, defaultLocation));
         return sp.getString(keyForLocation, defaultLocation);
     }
 

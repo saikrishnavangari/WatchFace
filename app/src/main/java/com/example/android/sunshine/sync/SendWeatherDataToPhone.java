@@ -28,9 +28,19 @@ public class SendWeatherDataToPhone implements GoogleApiClient.ConnectionCallbac
     private static final String WEATHER_MIN_TEMP = "min";
     private static final String WEATHER_PATH="/weather";
     private GoogleApiClient mGoogleApiClient;
+    private static SendWeatherDataToPhone sendWeatherDataToPhone;
+
+    private SendWeatherDataToPhone(){ }
+
+    public static synchronized SendWeatherDataToPhone getInstance( ) {
+        if (sendWeatherDataToPhone == null)
+            sendWeatherDataToPhone=new SendWeatherDataToPhone();
+        return sendWeatherDataToPhone;
+    }
 
 
-    public SendWeatherDataToPhone(ContentValues[] values, Context context) {
+
+    public void initialize(ContentValues[] values, Context context) {
         mContentValues = values;
         mContext=context;
         mGoogleApiClient = new GoogleApiClient.Builder(mContext)
@@ -54,6 +64,7 @@ public class SendWeatherDataToPhone implements GoogleApiClient.ConnectionCallbac
         putDataMapRequest.getDataMap().putDouble(WEATHER_MIN_TEMP, Min_temp);
         PutDataRequest putDataRequest = putDataMapRequest.asPutDataRequest();
         Wearable.DataApi.putDataItem(mGoogleApiClient, putDataRequest);
+        Log.d("Mobile-WearableDataSync", "Items transfered" );
     }
 
     @Override
