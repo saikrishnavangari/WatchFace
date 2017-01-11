@@ -133,14 +133,14 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
-            if (mClient == null) {
+
                 mClient = new GoogleApiClient.Builder(SunshineDigitalWatchFaceService.this)
                         .addConnectionCallbacks(this)
                         .addOnConnectionFailedListener(this)
                         .addApi(Wearable.API)
                         .build();
+                mClient.connect();
                 Log.d(LOG_TAG, "googleclient created");
-            }
             setWatchFaceStyle(new WatchFaceStyle.Builder(SunshineDigitalWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
@@ -338,12 +338,16 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
             } else {
                 Log.d("Mobile-WearableDataSync", "wearable side onConnected Bundle is null");
             }
-            Wearable.DataApi.getDataItems(mClient).setResultCallback(onConnectedResultCallBack);
+
+            Wearable.DataApi.addListener(mClient, this);
         }
 
         @Override
         public void onConnectionSuspended(int i) {
             Log.d("Mobile-WearableDataSync", "wearable side suspended : " + i);
+            Wearable.DataApi.removeListener(mClient, this);
+            if(mClient.isConnected())
+            mClient.disconnect();
         }
 
         @Override

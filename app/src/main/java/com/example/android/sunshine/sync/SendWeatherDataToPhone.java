@@ -10,6 +10,7 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataItemBuffer;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
@@ -60,10 +61,18 @@ public class SendWeatherDataToPhone implements GoogleApiClient.ConnectionCallbac
         PutDataMapRequest putDataMapRequest=PutDataMapRequest.create((WEATHER_PATH));
         double Max_temp = (double) values.get(WEATHER_MAX_TEMP);
         double Min_temp = (double) values.get(WEATHER_MIN_TEMP);
-        putDataMapRequest.getDataMap().putDouble(WEATHER_MAX_TEMP, Max_temp);
-        putDataMapRequest.getDataMap().putDouble(WEATHER_MIN_TEMP, Min_temp);
-        PutDataRequest putDataRequest = putDataMapRequest.asPutDataRequest();
-        Wearable.DataApi.putDataItem(mGoogleApiClient, putDataRequest);
+        putDataMapRequest.getDataMap().putDouble(WEATHER_MAX_TEMP, 36);
+        putDataMapRequest.getDataMap().putDouble(WEATHER_MIN_TEMP, 45);
+        PutDataRequest putDataRequest = putDataMapRequest.asPutDataRequest().setUrgent();
+        Wearable.DataApi.putDataItem(mGoogleApiClient, putDataRequest).
+                setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+            @Override
+            public void onResult(final DataApi.DataItemResult result) {
+                if(result.getStatus().isSuccess()) {
+                    Log.d("result", "Data item set: " + result.getDataItem().getUri());
+                }
+            }
+        });
         Log.d("Mobile-WearableDataSync", "Items transfered" );
     }
 

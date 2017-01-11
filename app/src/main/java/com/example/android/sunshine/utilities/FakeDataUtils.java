@@ -44,7 +44,7 @@ public class FakeDataUtils {
         List<ContentValues> fakeValues = new ArrayList<ContentValues>();
         //loop over 7 days starting today onwards
         for(int i=0; i<7; i++) {
-            fakeValues.add(FakeDataUtils.createTestWeatherContentValues(today + TimeUnit.DAYS.toMillis(i)));
+            fakeValues.add(FakeDataUtils.createTestWeatherContentValues(today + TimeUnit.HOURS.toMillis(i)));
         }
         // Bulk Insert our new weather data into Sunshine's Database
         context.getContentResolver().bulkInsert(
