@@ -19,6 +19,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.text.format.DateUtils;
+import android.util.Log;
 
 import com.example.android.sunshine.data.SunshinePreferences;
 import com.example.android.sunshine.data.WeatherContract;
@@ -28,8 +29,8 @@ import com.example.android.sunshine.utilities.OpenWeatherJsonUtils;
 
 import java.net.URL;
 
-public class SunshineSyncTask implements   GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
-
+public class SunshineSyncTask {
+    public static final String LOG_TAG=SunshineSyncTask.class.getSimpleName();
     /**
      * Performs the network request for updated weather, parses the JSON from that request, and
      * inserts the new weather information into our ContentProvider. Will notify the user that new
@@ -64,7 +65,7 @@ public class SunshineSyncTask implements   GoogleApiClient.ConnectionCallbacks, 
             if (weatherValues != null && weatherValues.length != 0) {
                 /* Get a handle on the ContentResolver to delete and insert data */
                 ContentResolver sunshineContentResolver = context.getContentResolver();
-
+                Log.d(LOG_TAG,"sunshinesynctask class");
                 /* Delete old weather data because we don't need to keep multiple days' data */
                 sunshineContentResolver.delete(
                         WeatherContract.WeatherEntry.CONTENT_URI,
@@ -75,7 +76,7 @@ public class SunshineSyncTask implements   GoogleApiClient.ConnectionCallbacks, 
                 sunshineContentResolver.bulkInsert(
                         WeatherContract.WeatherEntry.CONTENT_URI,
                         weatherValues);
-
+                SendWeatherDataToPhone sendWeatherDataToPhone=new SendWeatherDataToPhone(weatherValues,context);
                 /*
                  * Finally, after we insert data into the ContentProvider, determine whether or not
                  * we should notify the user that the weather has been refreshed.
@@ -113,4 +114,7 @@ public class SunshineSyncTask implements   GoogleApiClient.ConnectionCallbacks, 
             e.printStackTrace();
         }
     }
+
+
+
 }
