@@ -63,6 +63,7 @@ public class SendWeatherDataToPhone implements GoogleApiClient.ConnectionCallbac
         double Min_temp = (double) values.get(WEATHER_MIN_TEMP);
         putDataMapRequest.getDataMap().putDouble(WEATHER_MAX_TEMP, 36);
         putDataMapRequest.getDataMap().putDouble(WEATHER_MIN_TEMP, 45);
+        putDataMapRequest.getDataMap().putLong("time", System.currentTimeMillis());
         PutDataRequest putDataRequest = putDataMapRequest.asPutDataRequest().setUrgent();
         Wearable.DataApi.putDataItem(mGoogleApiClient, putDataRequest).
                 setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
