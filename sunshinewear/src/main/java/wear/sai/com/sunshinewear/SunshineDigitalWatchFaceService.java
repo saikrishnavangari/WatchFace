@@ -29,11 +29,26 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataItemBuffer;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
@@ -47,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+    private static final String LOG_TAG = "Wearable-WearableDataSync";
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -84,11 +100,17 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine implements
+            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+            DataApi.DataListener {
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
         Paint mTextPaint;
+        private static final String WEATHER_PATH = "/weather";
+        private static final String WEATHER_MAX_TEMP = "max";
+        private static final String WEATHER_MIN_TEMP = "min";
+        private final String LOG_TAG = Engine.class.getSimpleName();
         boolean mAmbient;
         Calendar mCalendar;
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -100,7 +122,8 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         };
         float mXOffset;
         float mYOffset;
-
+        //Connect to Wearable Api
+        GoogleApiClient mClient;
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -111,6 +134,13 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+                mClient = new GoogleApiClient.Builder(SunshineDigitalWatchFaceService.this)
+                        .addConnectionCallbacks(this)
+                        .addOnConnectionFailedListener(this)
+                        .addApi(Wearable.API)
+                        .build();
+                mClient.connect();
+                Log.d(LOG_TAG, "googleclient created");
             setWatchFaceStyle(new WatchFaceStyle.Builder(SunshineDigitalWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
@@ -247,11 +277,12 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             // Draw the background.
+
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
             } else {
 
-                canvas.drawRect(0, 0, bounds.width(),bounds.height(), mBackgroundPaint);
+                canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
             }
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
@@ -263,8 +294,8 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                     mCalendar.get(Calendar.MINUTE))
                     : String.format("%d:%02d:%02d", mCalendar.get(Calendar.HOUR),
                     mCalendar.get(Calendar.MINUTE), mCalendar.get(Calendar.SECOND));
-            float x=mTextPaint.measureText(text)/2;
-            canvas.drawText(text, bounds.centerX()-x, bounds.centerY(), mTextPaint);
+            float x = mTextPaint.measureText(text) / 2;
+            canvas.drawText(text, bounds.centerX() - x, bounds.centerY(), mTextPaint);
         }
 
         /**
@@ -296,6 +327,59 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                 long delayMs = INTERACTIVE_UPDATE_RATE_MS
                         - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
+            }
+        }
+
+
+        @Override
+        public void onConnected(@Nullable Bundle bundle) {
+            if (bundle != null) {
+                Log.d("Mobile-WearableDataSync", "wearable side onConnected" + bundle.toString());
+            } else {
+                Log.d("Mobile-WearableDataSync", "wearable side onConnected Bundle is null");
+            }
+
+            Wearable.DataApi.addListener(mClient, this);
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            Log.d("Mobile-WearableDataSync", "wearable side suspended : " + i);
+            Wearable.DataApi.removeListener(mClient, this);
+            if(mClient.isConnected())
+            mClient.disconnect();
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            Log.d("Mobile-WearableDataSync", "wearable side onConnectionFailed : " + connectionResult);
+
+        }
+
+        private final ResultCallback<DataItemBuffer> onConnectedResultCallBack = new ResultCallback<DataItemBuffer>() {
+            @Override
+            public void onResult(@NonNull DataItemBuffer dataItems) {
+                Log.i(LOG_TAG, "Result Callback : " + String.valueOf(dataItems));
+            }
+        };
+
+        @Override
+        public void onDataChanged(DataEventBuffer dataEvents) {
+            Log.d(LOG_TAG, "New data received");
+            for (DataEvent event : dataEvents) {
+                if (event.getType() == DataEvent.TYPE_CHANGED) {
+                    DataItem item = event.getDataItem();
+                    DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+                    String path = item.getUri().getPath();
+                    if (path.equals(WEATHER_PATH)) {
+                        double mHigh = dataMap.getDouble(WEATHER_MAX_TEMP);
+                        double mLow = dataMap.getDouble(WEATHER_MIN_TEMP);
+                        // createIcons(dataMap.getString(ICON));
+                        invalidate();
+                        Log.d(LOG_TAG, String.valueOf(mHigh));
+                        Log.d(LOG_TAG, String.valueOf(mLow));
+                    }
+                }
             }
         }
     }
