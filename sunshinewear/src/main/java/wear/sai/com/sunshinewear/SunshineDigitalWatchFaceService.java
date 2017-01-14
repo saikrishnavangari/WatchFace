@@ -146,6 +146,8 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
          * disable anti-aliasing in ambient mode.
          */
         boolean mLowBitAmbient;
+        private float mBitmapYOffset;
+        private float mtempYOffset;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -166,13 +168,14 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                     .build());
             Resources resources = SunshineDigitalWatchFaceService.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
-            mYOffset = resources.getDimension(R.dimen.digital_y_offset);
             mY1Offset = resources.getDimension(R.dimen.digital_y1_offset);
 
             dp_10 = resources.getDimension(R.dimen.dp_10);
             dp_5 = resources.getDimension(R.dimen.dp_5);
             mHigh = 0;
             mLow = 0;
+            mBitmapYOffset =0;
+            mtempYOffset=0;
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.blue));
             mSecondLineTextPaint = new Paint();
@@ -244,7 +247,14 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                     ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
-
+            if(isRound){
+                mtempYOffset=mYOffset + 2 * mY1Offset + 2 * dp_10 + dp_5;
+                mBitmapYOffset =mYOffset + 2 * mY1Offset + dp_5;
+            }
+            else{
+                mtempYOffset=mYOffset + 2 * mY1Offset + dp_10;
+                mBitmapYOffset =mYOffset + mY1Offset+dp_10+dp_5;
+            }
             mTextPaint.setTextSize(textSize);
         }
 
@@ -344,12 +354,12 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                         weatherIconBitmap, (int) (weatherIconBitmap.getWidth() * scale),
                         (int) (weatherIconBitmap.getHeight() * scale), true
                 );
-                canvas.drawBitmap(weatherIconBitMapScaled, mXOffset, mYOffset + 2 * mY1Offset + dp_10, null);
+                canvas.drawBitmap(weatherIconBitMapScaled, mXOffset, mBitmapYOffset, null);
 
                 String highTemp = String.format(getResources().getString(R.string.format_temperature), mHigh);
                 String lowTemp = String.format(getResources().getString(R.string.format_temperature), mLow);
-                canvas.drawText(highTemp, mXOffset + 3 * dp_10, mYOffset + 2 * mY1Offset + 2 * dp_10 + dp_5, mSecondLineTextPaint);
-                canvas.drawText(lowTemp, mXOffset + 8 * dp_10, mYOffset + 2 * mY1Offset + 2 * dp_10 + dp_5, mSecondLineTextPaint);
+                canvas.drawText(highTemp +" "+lowTemp, mXOffset + 3 * dp_10, mtempYOffset, mSecondLineTextPaint);
+              //  canvas.drawText(lowTemp, mXOffset + 8 * dp_10, mYOffset + 2 * mY1Offset + 2 * dp_10 + dp_5, mSecondLineTextPaint);
             }
         }
 
