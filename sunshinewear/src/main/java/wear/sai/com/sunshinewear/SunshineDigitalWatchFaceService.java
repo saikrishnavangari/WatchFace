@@ -249,7 +249,7 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
             if(isRound){
                 mtempYOffset=mYOffset + 2 * mY1Offset + 2 * dp_10 + dp_5;
-                mBitmapYOffset =mYOffset + 2 * mY1Offset + dp_5;
+                mBitmapYOffset =mYOffset + 2 * mY1Offset + dp_10;
             }
             else{
                 mtempYOffset=mYOffset + 2 * mY1Offset + dp_10;
@@ -358,7 +358,7 @@ public class SunshineDigitalWatchFaceService extends CanvasWatchFaceService {
 
                 String highTemp = String.format(getResources().getString(R.string.format_temperature), mHigh);
                 String lowTemp = String.format(getResources().getString(R.string.format_temperature), mLow);
-                canvas.drawText(highTemp +" "+lowTemp, mXOffset + 3 * dp_10, mtempYOffset, mSecondLineTextPaint);
+                canvas.drawText(highTemp +""+lowTemp, mXOffset + 3 * dp_10, mtempYOffset, mSecondLineTextPaint);
               //  canvas.drawText(lowTemp, mXOffset + 8 * dp_10, mYOffset + 2 * mY1Offset + 2 * dp_10 + dp_5, mSecondLineTextPaint);
             }
         }
